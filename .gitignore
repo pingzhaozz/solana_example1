@@ -1,0 +1,16 @@
+.anchor
+.DS_Store
+target
+**/*.rs.bk
+test-ledger
+.yarn
+
+
+# Node.js 相关
+node_modules/
+package-lock.json
+.yarn.lock
+
+# Anchor 运行时数据
+.mango/
+.solana/
