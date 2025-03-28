@@ -1,6 +1,7 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { Test } from "../target/types/test";
+import { Keypair } from "@solana/web3.js";
 import { ComputeBudgetProgram, Transaction } from "@solana/web3.js";
 
 describe("test", () => {
@@ -11,18 +12,27 @@ describe("test", () => {
   const program = anchor.workspace.Test as Program<Test>;
 
   it("Is initialized!", async () => {
-    // Create a transaction with increased compute unit limit
-    const tx = new Transaction().add(
-      ComputeBudgetProgram.setComputeUnitLimit({
-        units: 300000, // Increase the compute unit limit
-      }),
-    );
+    const provider = anchor.getProvider();
 
-    // Add the initialize instruction to the transaction
-    tx.add(await program.methods.initialize().instruction());
+    // 创建新账户
+    const newAccount = Keypair.generate();
+    const lamports = await provider.connection.getMinimumBalanceForRentExemption(8 + 1024);
 
-    // Send the transaction
-    const txSignature = await anchor.AnchorProvider.env().sendAndConfirm(tx);
-    console.log("Your transaction signature", txSignature);
+    // 请求空投
+    const tx = await provider.connection.requestAirdrop(newAccount.publicKey, lamports);
+    await provider.connection.confirmTransaction(tx);
+
+    // 调用程序并初始化账户
+    const txSignature = await program.methods
+      .initialize()
+      .accounts({
+        myAccount: newAccount.publicKey,
+        user: provider.publicKey,
+      })
+      .signers([newAccount])
+      .rpc();
+
+    console.log("Transaction Signature:", txSignature);
   });
+
 });
